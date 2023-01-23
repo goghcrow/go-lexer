@@ -55,7 +55,7 @@ const (
 )
 
 var (
-	idReg = regexp.MustCompile("^[a-zA-Z\\p{L}_][a-zA-Z0-9\\p{L}_]*$")
+	idReg = regexp.MustCompile("^" + RegIdent + "$")
 	opReg = regexp.MustCompile("^[" + regexp.QuoteMeta(operators) + "]+$")
 )
 

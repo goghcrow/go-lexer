@@ -63,7 +63,7 @@ func keyword(k TokenKind, kw string) Rule {
 }
 
 func regex(k TokenKind, pattern string) Rule {
-	startWith := regexp.MustCompile("^" + pattern)
+	startWith := regexp.MustCompile("^(?:" + pattern + ")")
 	return Rule{true, k, func(s string) int {
 		found := startWith.FindString(s)
 		if found == "" {

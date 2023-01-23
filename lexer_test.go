@@ -9,6 +9,7 @@ import (
 const (
 	Number TokenKind = iota
 	Ident
+	NumId
 	Space
 	Comma
 )
@@ -17,6 +18,7 @@ func stroftk(k TokenKind) string {
 	return map[TokenKind]string{
 		Number: "<num>",
 		Ident:  "<id>",
+		NumId:  "<numid>",
 		Space:  "<space>",
 		Comma:  ",",
 	}[k]
@@ -58,6 +60,15 @@ func TestLexer(t *testing.T) {
 			BuildLexer(func(lex *Lexicon) {
 				lex.Regex(Number, "\\d+")
 				lex.Regex(Ident, "[a-zA-Z]\\w*")
+				lex.Regex(Space, "\\s+").Skip()
+				lex.Str(Comma, ",").Skip()
+			}),
+		},
+		{
+			"123, abc, 456, def, ",
+			"<numid>/123🍌<numid>/abc🍌<numid>/456🍌<numid>/def",
+			BuildLexer(func(lex *Lexicon) {
+				lex.Regex(NumId, "\\d+|(?:[a-zA-Z]\\w*)")
 				lex.Regex(Space, "\\s+").Skip()
 				lex.Str(Comma, ",").Skip()
 			}),
