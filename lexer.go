@@ -8,15 +8,17 @@ import (
 // BuildLexer
 // 这里没有取最长匹配, 而是首次匹配, so, 注意规则顺序
 // 具体可以参考 example/lexicon.go
-func BuildLexer(f func(lexicon *Lexicon)) *Lexer {
-	lex := NewLexicon()
+func BuildLexer[TokenKind comparable](f func(lexicon *Lexicon[TokenKind])) *Lexer[TokenKind] {
+	lex := NewLexicon[TokenKind]()
 	f(&lex)
 	return NewLexer(lex)
 }
 
-func NewLexer(lex Lexicon) *Lexer { return &Lexer{Lexicon: lex} }
+func NewLexer[TokenKind comparable](lex Lexicon[TokenKind]) *Lexer[TokenKind] {
+	return &Lexer[TokenKind]{Lexicon: lex}
+}
 
-func (l *Lexer) MustLex(input string) []*Token {
+func (l *Lexer[TokenKind]) MustLex(input string) []*Token[TokenKind] {
 	toks, err := l.Lex(input)
 	if err != nil {
 		panic(err)
@@ -24,10 +26,10 @@ func (l *Lexer) MustLex(input string) []*Token {
 	return toks
 }
 
-func (l *Lexer) Lex(input string) ([]*Token, error) {
+func (l *Lexer[TokenKind]) Lex(input string) ([]*Token[TokenKind], error) {
 	l.input = []rune(input)
 	l.Pos = Pos{}
-	var toks []*Token
+	var toks []*Token[TokenKind]
 	for {
 		t, keep, err := l.next()
 		if err != nil {
@@ -43,13 +45,13 @@ func (l *Lexer) Lex(input string) ([]*Token, error) {
 	return toks, nil
 }
 
-type Lexer struct {
-	Lexicon
+type Lexer[TokenKind comparable] struct {
+	Lexicon[TokenKind]
 	Pos
 	input []rune
 }
 
-func (l *Lexer) next() (tok *Token, keep bool, err error) {
+func (l *Lexer[TokenKind]) next() (tok *Token[TokenKind], keep bool, err error) {
 	if l.Idx >= len(l.input) {
 		return nil, true, nil
 	}
@@ -64,7 +66,7 @@ func (l *Lexer) next() (tok *Token, keep bool, err error) {
 				l.Move(r)
 			}
 			pos.IdxEnd = l.Pos.Idx
-			return &Token{TokenKind: rl.TokenKind, Lexeme: string(matched), Pos: pos}, rl.keep, nil
+			return &Token[TokenKind]{TokenKind: rl.TokenKind, Lexeme: string(matched), Pos: pos}, rl.keep, nil
 		}
 	}
 	return nil, false, fmt.Errorf("syntax error in %s: nothing token matched", l.Pos)

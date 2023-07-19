@@ -42,9 +42,9 @@ const (
 	POSTFIX
 )
 
-type Operator struct {
-	TokenKind
-	Lexeme string
+type Operator[TokenKind comparable] struct {
+	TokenKind TokenKind
+	Lexeme    string
 	BP
 	Fixity
 }
@@ -76,7 +76,7 @@ func IsOp(s string) bool { return opReg.MatchString(s) }
 // e.g. ! 需要放在 != 之后, > 需要放在 >= 之后
 // e.g. 如果定义 & 需要放在  && 之后
 // 使用 ops 之前, 需要先排下序
-func SortOpers(ops []Operator) []Operator {
+func SortOpers[TokenKind comparable](ops []Operator[TokenKind]) []Operator[TokenKind] {
 	sort.SliceStable(ops, func(i, j int) bool {
 		x := ops[i].Lexeme
 		y := ops[j].Lexeme

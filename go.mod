@@ -1,3 +1,3 @@
 module github.com/goghcrow/lexer
 
-go 1.17
+go 1.18

@@ -7,29 +7,38 @@ import (
 
 const NotMatched = -1
 
-type Rule struct {
-	keep bool
-	TokenKind
-	match func(string) int // 匹配返回 EndRuneCount , 失败返回 NotMatched
+type Rule[TokenKind comparable] struct {
+	keep      bool
+	TokenKind TokenKind
+	match     func(string) int // 匹配返回 EndRuneCount , 失败返回 NotMatched
 }
 
-func (r *Rule) Skip() *Rule { r.keep = false; return r }
+func (r *Rule[TokenKind]) Skip() *Rule[TokenKind] { r.keep = false; return r }
 
 // Lexicon Lexical grammar
-type Lexicon struct {
-	rules []*Rule
+type Lexicon[TokenKind comparable] struct {
+	rules []*Rule[TokenKind]
 }
 
-func NewLexicon() Lexicon {
-	return Lexicon{}
+func NewLexicon[Kind comparable]() Lexicon[Kind] {
+	return Lexicon[Kind]{}
 }
 
-func (l *Lexicon) Rule(r Rule) *Rule                       { l.rules = append(l.rules, &r); return &r }
-func (l *Lexicon) Str(k TokenKind, s string) *Rule         { return l.Rule(str(k, s)) }
-func (l *Lexicon) Keyword(k TokenKind, s string) *Rule     { return l.Rule(keyword(k, s)) }
-func (l *Lexicon) Regex(k TokenKind, pattern string) *Rule { return l.Rule(regex(k, pattern)) }
-func (l *Lexicon) PrimOper(k TokenKind, oper string) *Rule { return l.Rule(primOper(k, oper)) }
-func (l *Lexicon) Oper(k TokenKind, oper string) *Rule {
+func (l *Lexicon[TokenKind]) Rule(r Rule[TokenKind]) *Rule[TokenKind] {
+	l.rules = append(l.rules, &r)
+	return &r
+}
+func (l *Lexicon[TokenKind]) Str(k TokenKind, s string) *Rule[TokenKind] { return l.Rule(str(k, s)) }
+func (l *Lexicon[TokenKind]) Keyword(k TokenKind, s string) *Rule[TokenKind] {
+	return l.Rule(keyword(k, s))
+}
+func (l *Lexicon[TokenKind]) Regex(k TokenKind, pattern string) *Rule[TokenKind] {
+	return l.Rule(regex(k, pattern))
+}
+func (l *Lexicon[TokenKind]) PrimOper(k TokenKind, oper string) *Rule[TokenKind] {
+	return l.Rule(primOper(k, oper))
+}
+func (l *Lexicon[TokenKind]) Oper(k TokenKind, oper string) *Rule[TokenKind] {
 	if IsIdentOp(oper) {
 		return l.Keyword(k, oper)
 	} else {
@@ -37,8 +46,8 @@ func (l *Lexicon) Oper(k TokenKind, oper string) *Rule {
 	}
 }
 
-func str(k TokenKind, str string) Rule {
-	return Rule{true, k, func(s string) int {
+func str[TokenKind comparable](k TokenKind, str string) Rule[TokenKind] {
+	return Rule[TokenKind]{true, k, func(s string) int {
 		if strings.HasPrefix(s, str) {
 			return runeCount(str)
 		} else {
@@ -49,8 +58,8 @@ func str(k TokenKind, str string) Rule {
 
 var keywordPostfix = regexp.MustCompile(`^[a-zA-Z\d\p{L}_]+`)
 
-func keyword(k TokenKind, kw string) Rule {
-	return Rule{true, k, func(s string) int {
+func keyword[TokenKind comparable](k TokenKind, kw string) Rule[TokenKind] {
+	return Rule[TokenKind]{true, k, func(s string) int {
 		// golang regexp 不支持 lookahead
 		completedWord := strings.HasPrefix(s, kw) &&
 			!keywordPostfix.MatchString(s[len(kw):])
@@ -62,9 +71,9 @@ func keyword(k TokenKind, kw string) Rule {
 	}}
 }
 
-func regex(k TokenKind, pattern string) Rule {
+func regex[TokenKind comparable](k TokenKind, pattern string) Rule[TokenKind] {
 	startWith := regexp.MustCompile("^(?:" + pattern + ")")
-	return Rule{true, k, func(s string) int {
+	return Rule[TokenKind]{true, k, func(s string) int {
 		found := startWith.FindString(s)
 		if found == "" {
 			return NotMatched
@@ -76,8 +85,8 @@ func regex(k TokenKind, pattern string) Rule {
 
 // primOper . ? 内置操作符的优先级高于自定义操作符, 且不是匹配最长, 需要特殊处理
 // e.g 比如自定义操作符 .^. 不能匹配成 [`.`, `^.`]
-func primOper(k TokenKind, oper string) Rule {
-	return Rule{true, k, func(s string) int {
+func primOper[TokenKind comparable](k TokenKind, oper string) Rule[TokenKind] {
+	return Rule[TokenKind]{true, k, func(s string) int {
 		if !strings.HasPrefix(s, oper) {
 			return NotMatched
 		}

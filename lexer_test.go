@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+type TokenKind int
+
 const (
 	Number TokenKind = iota
 	Ident
@@ -28,12 +30,12 @@ func TestLexer(t *testing.T) {
 	for _, tt := range []struct {
 		input  string
 		expect string
-		lexer  *Lexer
+		lexer  *Lexer[TokenKind]
 	}{
 		{
 			"123",
 			"<num>/123",
-			BuildLexer(func(lex *Lexicon) {
+			BuildLexer[TokenKind](func(lex *Lexicon[TokenKind]) {
 				lex.Regex(Number, "\\d+")
 				lex.Str(Comma, ",")
 			}),
@@ -41,7 +43,7 @@ func TestLexer(t *testing.T) {
 		{
 			"123,456",
 			"<num>/123🍌,/,🍌<num>/456",
-			BuildLexer(func(lex *Lexicon) {
+			BuildLexer[TokenKind](func(lex *Lexicon[TokenKind]) {
 				lex.Regex(Number, "\\d+")
 				lex.Str(Comma, ",")
 			}),
@@ -49,7 +51,7 @@ func TestLexer(t *testing.T) {
 		{
 			"123,456,789",
 			"<num>/123🍌<num>/456🍌<num>/789",
-			BuildLexer(func(lex *Lexicon) {
+			BuildLexer[TokenKind](func(lex *Lexicon[TokenKind]) {
 				lex.Regex(Number, "\\d+")
 				lex.Str(Comma, ",").Skip()
 			}),
@@ -57,7 +59,7 @@ func TestLexer(t *testing.T) {
 		{
 			"123, abc, 456, def, ",
 			"<num>/123🍌<id>/abc🍌<num>/456🍌<id>/def",
-			BuildLexer(func(lex *Lexicon) {
+			BuildLexer[TokenKind](func(lex *Lexicon[TokenKind]) {
 				lex.Regex(Number, "\\d+")
 				lex.Regex(Ident, "[a-zA-Z]\\w*")
 				lex.Regex(Space, "\\s+").Skip()
@@ -67,7 +69,7 @@ func TestLexer(t *testing.T) {
 		{
 			"123, abc, 456, def, ",
 			"<numid>/123🍌<numid>/abc🍌<numid>/456🍌<numid>/def",
-			BuildLexer(func(lex *Lexicon) {
+			BuildLexer[TokenKind](func(lex *Lexicon[TokenKind]) {
 				lex.Regex(NumId, "\\d+|(?:[a-zA-Z]\\w*)")
 				lex.Regex(Space, "\\s+").Skip()
 				lex.Str(Comma, ",").Skip()
@@ -84,7 +86,7 @@ func TestLexer(t *testing.T) {
 	}
 }
 
-func fmtToks(toks []*Token) string {
+func fmtToks(toks []*Token[TokenKind]) string {
 	xs := make([]string, len(toks))
 	for i, t := range toks {
 		xs[i] = fmt.Sprintf("%s/%s", stroftk(t.TokenKind), t.Lexeme)
